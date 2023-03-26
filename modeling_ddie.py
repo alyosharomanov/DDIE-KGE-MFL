@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import math
+import numpy
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -121,8 +122,8 @@ class BertForSequenceClassification(BertPreTrainedModel):
         pooled_output = (position_feature + attention_feature + key_path_feature) / 3
 
         # knowledge graph embedding
-        drug_a_ids = torch.tensor([d for d in drug_a_ids], dtype=torch.float).to(self.args.device)
-        drug_b_ids = torch.tensor([d for d in drug_b_ids], dtype=torch.float).to(self.args.device)
+        drug_a_ids = torch.tensor(numpy.array([d for d in drug_a_ids]), dtype=torch.float).to(self.args.device)
+        drug_b_ids = torch.tensor(numpy.array([d for d in drug_b_ids]), dtype=torch.float).to(self.args.device)
         drug_a_id = self.linear(drug_a_ids)
         drug_b_id = self.linear(drug_b_ids)
         # final feature

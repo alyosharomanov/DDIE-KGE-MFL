@@ -11,11 +11,11 @@ from transformers import BertConfig, BertTokenizer
 from processor_ddie import DDIEProcessor
 from modeling_ddie import BertForSequenceClassification
 from load_and_cache_examples_ddie import load_and_cache_examples
-from transformers import AdamW, get_linear_schedule_with_warmup
+from transformers import get_linear_schedule_with_warmup
 from tqdm import tqdm, trange
 from metrics_ddie import ddie_compute_metrics
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -23,7 +23,10 @@ except:
     from tensorboardX import SummaryWriter
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
+from transformers import logging as log
+log.set_verbosity_error()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -106,10 +109,13 @@ def main():
         args.n_gpu = 1
     args.device = device
     # Setup logging
-    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
-                        datefmt='%m/%d/%Y %H:%M:%S',
-                        level=logging.INFO if args.local_rank in [-1, 0] else logging.WARN)
-    logger.warning("Process rank: %s, device: %s, n_gpu: %s, distributed training: %s, 16-bits training: %s",
+    ch = logging.StreamHandler()
+    if not os.environ.get("NO_COLOR"):
+        ch = util.ColorHandler()
+    ch.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(name)s -   %(message)s'))
+    logger.addHandler(ch)
+
+    logger.info("Process rank: %s, device: %s, n_gpu: %s, distributed training: %s, 16-bits training: %s",
                    args.local_rank, device, args.n_gpu, bool(args.local_rank != -1), False)
     # Set seed
     util.set_seed(args)
@@ -223,7 +229,7 @@ def train(args, train_dataset, model, tokenizer):
             "weight_decay": 0.0,
         },
     ]
-    optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
+    optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.warmup_steps,
                                                 num_training_steps=t_total)
 
